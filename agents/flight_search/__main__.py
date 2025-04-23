@@ -4,7 +4,6 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from agent import get_agent_async
 from task_manager import FlightAgentTaskManager
-from agent import FlightAgent
 from dotenv import load_dotenv
 import logging
 import uvicorn
@@ -41,7 +40,7 @@ async def main(host, port):
         agent, exit_stack = await get_agent_async()
         runner = Runner(
             app_name = "flight_search_a2a_app",
-            runner = runner,
+            agent = agent,
             session_service = session_service
         )
         task_manager = FlightAgentTaskManager(
@@ -62,11 +61,29 @@ async def main(host, port):
             log_level = "info"
         )
         server = uvicorn.Server(config)
-        server.run()
+        await server.serve()
     
     except Exception as e:
         logger.error(f"Error starting flight search A2A server: {e}")
         exit(1)
     finally:
         if exit_stack:
-            exit_stack.close()
+            await exit_stack.aclose()
+
+
+if __name__ == "__main__":
+    import asyncio
+    host = "0.0.0.0"
+    port = 8000
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    try:
+        loop.run_until_complete(main(host, port))
+    except KeyboardInterrupt:
+        print("Shutting down...")
+    finally:
+        loop.close()

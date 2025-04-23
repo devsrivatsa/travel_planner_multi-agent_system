@@ -12,9 +12,12 @@ from common.types import (
     Message, 
     TaskState,
     Task,
-    TextPart
+    TextPart,
+    SendTaskStreamingRequest,
+    SendTaskStreamingResponse,
+    JSONRPCResponse
 )
-
+from typing import AsyncIterable
 logger = logging.getLogger(__name__)
 
 class FlightAgentTaskManager(InMemoryTaskManager):
@@ -63,3 +66,19 @@ class FlightAgentTaskManager(InMemoryTaskManager):
         if not isinstance(part, TextPart):
             raise ValueError("User query is not a text part. Only text parts are supported")
         return part.text
+    
+    async def on_send_task(self, request: SendTaskRequest) -> SendTaskResponse:
+        error = self._validate_request(request)
+        if error:
+            return error
+        await self.upsert_task(request.params)
+        return await self._invoke(request)
+    
+    async def on_send_task_subscribe(
+        self, request: SendTaskStreamingRequest
+    ) -> AsyncIterable[SendTaskStreamingResponse] | JSONRPCResponse:
+        error = self._validate_request(request)
+        if error:
+            return error
+        await self.upsert_task(request.params)
+        return self._stream_generator(request)

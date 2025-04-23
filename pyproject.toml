@@ -12,5 +12,8 @@ dependencies = [
     "mcp-hotel-search>=0.1.2",
     "pydantic>=2.11.3",
     "python-dotenv>=1.1.0",
+    "setuptools>=79.0.0",
+    "sse-starlette>=2.2.1",
+    "starlette>=0.46.2",
     "uvicorn>=0.34.2",
 ]
